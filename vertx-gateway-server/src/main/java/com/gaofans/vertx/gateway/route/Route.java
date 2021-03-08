@@ -192,6 +192,7 @@ public class Route<T,R> implements Ordered {
             return filters(Arrays.asList(gatewayFilters));
         }
 
+        @Override
         public Route<T,R> build() {
             Assert.notNull(this.id, "id can not be null");
             Assert.notNull(this.uri, "uri can not be null");
@@ -207,8 +208,9 @@ public class Route<T,R> implements Ordered {
 
         protected Predicate<Exchanger<T,R>> predicate;
 
-        public Builder<T,R> predicate(GatewayPredicate<T,R> predicate){
+        public Builder<T,R> predicate(Predicate<Exchanger<T,R>> predicate){
             this.predicate = predicate;
+            return this;
         }
 
         @Override

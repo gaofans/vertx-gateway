@@ -1,6 +1,7 @@
 package com.gaofans.vertx.gateway.support;
 
 import com.gaofans.vertx.gateway.filter.GlobalFilter;
+import com.gaofans.vertx.gateway.filter.factory.GatewayFilterFactory;
 import com.gaofans.vertx.gateway.handler.predicate.RoutePredicateFactory;
 
 import java.util.regex.Matcher;
