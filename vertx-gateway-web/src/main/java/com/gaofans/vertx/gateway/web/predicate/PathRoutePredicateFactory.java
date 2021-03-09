@@ -42,7 +42,7 @@ public class PathRoutePredicateFactory extends AbstractRoutePredicateFactory<Pat
 	@Override
 	public Predicate<Exchanger<HttpServerRequest,HttpServerResponse>> apply(Config config) {
 
-		return (GatewayPredicate<HttpServerRequest, HttpServerResponse>) Exchanger -> false;
+		return (GatewayPredicate<HttpServerRequest, HttpServerResponse>) exchanger -> true;
 	}
 
 	@Validated

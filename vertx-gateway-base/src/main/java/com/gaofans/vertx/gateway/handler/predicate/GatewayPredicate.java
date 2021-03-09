@@ -53,7 +53,7 @@ public interface GatewayPredicate<T,R> extends Predicate<Exchanger<T,R>> {
         GatewayPredicate<T,R> right;
 
         if (other instanceof GatewayPredicate) {
-            right = (GatewayPredicate<T, R>) other;
+            right = (GatewayPredicate) other;
         }else {
             right = new GatewayPredicateWrapper<>(other);
         }
