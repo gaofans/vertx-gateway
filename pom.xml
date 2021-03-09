@@ -15,6 +15,7 @@
         <module>vertx-gateway-dependencies</module>
         <module>vertx-gateway-server</module>
         <module>vertx-gateway-base</module>
+        <module>vertx-gateway-web</module>
     </modules>
     <dependencyManagement>
         <dependencies>

@@ -9,7 +9,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>vertx-gateway-server</artifactId>
+    <artifactId>vertx-gateway-web</artifactId>
 
     <dependencies>
         <dependency>
@@ -25,7 +25,10 @@
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
-
+        <dependency>
+            <groupId>com.gaofans.vertx</groupId>
+            <artifactId>vertx-gateway-base</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>

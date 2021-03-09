@@ -1,5 +1,6 @@
 package com.gaofans.vertx.gateway.handler;
 
+import com.gaofans.vertx.gateway.route.Route;
 import org.springframework.util.Assert;
 
 import java.util.Map;
@@ -23,6 +24,12 @@ public interface Exchanger<T,R> {
      * @return response
      */
     R getResponse();
+
+    /**
+     * 获取当前路由
+     * @return route
+     */
+    Route<T,R> getRoute();
 
     /**
      * 获取上下文
