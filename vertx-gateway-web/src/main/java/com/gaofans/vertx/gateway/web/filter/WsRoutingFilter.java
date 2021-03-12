@@ -33,6 +33,7 @@ public class WsRoutingFilter implements GlobalFilter<ServerWebSocket, ServerWebS
                 .webSocket(targetPort,targetHost,targetUri)
                 .onSuccess(req -> {
                     webSocket.pipe().to(req);
+                    req.pipe().to(webSocket);
                 })
                 .onFailure(event -> {
 
