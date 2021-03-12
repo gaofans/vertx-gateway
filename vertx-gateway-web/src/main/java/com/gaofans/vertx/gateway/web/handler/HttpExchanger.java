@@ -14,17 +14,19 @@ import java.util.Map;
 /**
  * http代理交换器
  */
-public class WebExchanger implements Exchanger<HttpServerRequest, HttpServerResponse> {
+public class HttpExchanger implements Exchanger<HttpServerRequest, HttpServerResponse> {
 
     private final HttpServerRequest request;
     private final Map<String,Object> context;
     private Route<HttpServerRequest,HttpServerResponse> route;
-    private final static Logger LOGGER = LoggerFactory.getLogger(WebExchanger.class);
+    private boolean routed;
+    private final static Logger LOGGER = LoggerFactory.getLogger(HttpExchanger.class);
 
-    public WebExchanger(HttpServerRequest request,
-                        RouteLocator<HttpServerRequest,HttpServerResponse> routeLocator) {
+    public HttpExchanger(HttpServerRequest request,
+                         RouteLocator<HttpServerRequest,HttpServerResponse> routeLocator) {
         this.request = request;
         this.context = new HashMap<>();
+        this.routed = false;
         for (Route<HttpServerRequest, HttpServerResponse> route : routeLocator.getRoutes()) {
             if (route.getPredicate().test(this)) {
                 this.route = route;
@@ -44,6 +46,15 @@ public class WebExchanger implements Exchanger<HttpServerRequest, HttpServerResp
     @Override
     public HttpServerResponse getResponse() {
         return this.request.response();
+    }
+
+    @Override
+    public boolean isRouted() {
+        return this.routed;
+    }
+
+    public void setRouted(boolean routed){
+        this.routed = routed;
     }
 
     @Override

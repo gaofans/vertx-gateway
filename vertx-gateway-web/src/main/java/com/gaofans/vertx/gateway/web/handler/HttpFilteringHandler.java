@@ -17,9 +17,9 @@ import java.util.List;
  * @author GaoFans
  * @since 2021/2/26
  */
-public class WebFilteringHandler extends AbstractFilteringHandler<HttpServerRequest, HttpServerResponse> {
+public class HttpFilteringHandler extends AbstractFilteringHandler<HttpServerRequest, HttpServerResponse> {
 
-    public WebFilteringHandler(List<GlobalFilter<HttpServerRequest, HttpServerResponse>> globalFilters) {
+    public HttpFilteringHandler(List<GlobalFilter<HttpServerRequest, HttpServerResponse>> globalFilters) {
         super(globalFilters);
     }
 
@@ -27,7 +27,7 @@ public class WebFilteringHandler extends AbstractFilteringHandler<HttpServerRequ
     public void handle(Exchanger<HttpServerRequest, HttpServerResponse> exchanger) {
         Route<HttpServerRequest, HttpServerResponse> route = exchanger.getRoute();
         if(route == null){
-            exchanger.getResponse().setStatusCode(404).end();
+            exchanger.getResponse().setStatusCode(404).setStatusMessage("未找到目标路由").end();
             return;
         }
         List<GatewayFilter<HttpServerRequest, HttpServerResponse>> gatewayFilters = route.getFilters();

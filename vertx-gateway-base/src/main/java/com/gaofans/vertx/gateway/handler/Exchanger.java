@@ -26,6 +26,18 @@ public interface Exchanger<T,R> {
     R getResponse();
 
     /**
+     * 是否已经路由
+     * @return bool
+     */
+    boolean isRouted();
+
+    /**
+     * 设置是否路由
+     * @param routed 是否
+     */
+    void setRouted(boolean routed);
+
+    /**
      * 获取当前路由
      * @return route
      */
