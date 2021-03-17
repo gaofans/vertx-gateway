@@ -2,9 +2,11 @@ package com.gaofans.vertx.gateway.web;
 
 import com.gaofans.vertx.gateway.filter.GlobalFilter;
 import com.gaofans.vertx.gateway.web.filter.HttpRoutingFilter;
+import com.gaofans.vertx.gateway.web.filter.WsRoutingFilter;
 import com.gaofans.vertx.gateway.web.handler.HttpHandlerAdapter;
 import com.gaofans.vertx.gateway.web.handler.HttpFilteringHandler;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import org.springframework.boot.SpringApplication;
@@ -24,8 +26,10 @@ public class Application {
     @PostConstruct
     public void start(){
         Vertx vertx = Vertx.vertx();
+        HttpClient httpClient = vertx.createHttpClient();
         List<GlobalFilter<HttpServerRequest, HttpServerResponse>> filters = new ArrayList<>();
-        filters.add(new HttpRoutingFilter(vertx));
+        filters.add(new HttpRoutingFilter(httpClient));
+        filters.add(new WsRoutingFilter(httpClient));
         HttpFilteringHandler handler = new HttpFilteringHandler(filters);
         HttpHandlerAdapter handlerAdapter = new HttpHandlerAdapter(handler);
 

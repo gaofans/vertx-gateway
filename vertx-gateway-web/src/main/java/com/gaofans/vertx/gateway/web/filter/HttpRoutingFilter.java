@@ -13,10 +13,10 @@ import org.springframework.core.Ordered;
 
 public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServerResponse>, Ordered {
 
-    private final Vertx vertx;
+    private final HttpClient httpClient;
 
-    public HttpRoutingFilter(Vertx vertx) {
-        this.vertx = vertx;
+    public HttpRoutingFilter(HttpClient httpClient) {
+        this.httpClient = httpClient;
     }
 
     @Override
@@ -33,8 +33,7 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
         int targetPort = route.getUri().getPort();
         String targetHost = route.getUri().getHost();
         String targetUri = request.uri();
-        HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
-        vertx.createHttpClient(options)
+        httpClient
                 .request(targetMethod,
                         targetPort,
                         targetHost,
