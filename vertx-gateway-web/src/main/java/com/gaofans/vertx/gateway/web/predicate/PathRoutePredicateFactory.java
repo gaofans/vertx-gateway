@@ -9,28 +9,14 @@ import io.vertx.core.http.HttpServerResponse;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 
 public class PathRoutePredicateFactory extends AbstractRoutePredicateFactory<PathRoutePredicateFactory.Config, HttpServerRequest, HttpServerResponse> {
 
 
-	private static final String MATCH_TRAILING_SLASH = "matchTrailingSlash";
-
-
 	public PathRoutePredicateFactory() {
 		super(Config.class);
-	}
-
-	@Override
-	public List<String> shortcutFieldOrder() {
-		return Arrays.asList("patterns", MATCH_TRAILING_SLASH);
-	}
-
-	@Override
-	public ShortcutType shortcutType() {
-		return ShortcutType.GATHER_LIST_TAIL_FLAG;
 	}
 
 	@Override

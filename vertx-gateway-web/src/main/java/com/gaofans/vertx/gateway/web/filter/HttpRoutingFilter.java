@@ -2,8 +2,10 @@ package com.gaofans.vertx.gateway.web.filter;
 
 import com.gaofans.vertx.gateway.filter.GatewayFilterChain;
 import com.gaofans.vertx.gateway.filter.GlobalFilter;
+import com.gaofans.vertx.gateway.filter.HeadersFilter;
 import com.gaofans.vertx.gateway.handler.Exchanger;
 import com.gaofans.vertx.gateway.route.Route;
+import com.gaofans.vertx.gateway.web.util.WebUtil;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -11,9 +13,19 @@ import io.vertx.core.http.*;
 import io.vertx.core.streams.Pipe;
 import org.springframework.core.Ordered;
 
+import java.util.List;
+import java.util.Objects;
+
 public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServerResponse>, Ordered {
 
     private final HttpClient httpClient;
+
+    private List<HeadersFilter> headersFilters;
+
+    public HttpRoutingFilter(HttpClient httpClient, List<HeadersFilter> headersFilters) {
+        this.httpClient = httpClient;
+        this.headersFilters = Objects.requireNonNull(headersFilters);;
+    }
 
     public HttpRoutingFilter(HttpClient httpClient) {
         this.httpClient = httpClient;
@@ -39,25 +51,27 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
                         targetHost,
                         targetUri)
                 .onSuccess(req -> {
-                    req.headers().setAll(request.headers());
+                    req.headers().setAll(HeadersFilter.filterRequest(this.headersFilters,request.headers()));
                     Pipe<Buffer> pipe = request.pipe();
                     pipe.endOnSuccess(true);
                     pipe.to(req)
-                        .onSuccess(unused -> {
-                            req.send().onSuccess(targetResponse -> {
-                                response.headers().setAll(targetResponse.headers());
-                                response.setStatusCode(targetResponse.statusCode());
-                                Pipe<Buffer> rp = targetResponse.pipe();
-                                rp.to(response);
-                                exchanger.setRouted(true);
-                                filterChain.filter(exchanger);
-                            });
-                        }).onFailure(Throwable::printStackTrace);
+                            .onSuccess(unused -> {
+                                req.send()
+                                        .onSuccess(targetResponse -> {
+                                            response.headers().setAll(targetResponse.headers());
+                                            response.setStatusCode(targetResponse.statusCode());
+                                            Pipe<Buffer> rp = targetResponse.pipe();
+                                            rp.to(response);
+                                            exchanger.setRouted(true);
+                                            filterChain.filter(exchanger);
+                                        })
+                                        .onFailure(event -> WebUtil.setBadStatus(response,event));
+                            })
+                            .onFailure(event -> WebUtil.setBadStatus(response,event));
                 })
-                .onFailure(event -> {
-                    response.end(event.getMessage());
-                });
+                .onFailure(event -> WebUtil.setBadStatus(response,event));
     }
+
 
     @Override
     public int getOrder() {
