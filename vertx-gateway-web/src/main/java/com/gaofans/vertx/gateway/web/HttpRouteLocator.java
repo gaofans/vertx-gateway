@@ -4,6 +4,7 @@ import com.gaofans.vertx.gateway.filter.OrderedGatewayFilter;
 import com.gaofans.vertx.gateway.route.Route;
 import com.gaofans.vertx.gateway.route.RouteLocator;
 import com.gaofans.vertx.gateway.web.filter.factory.PreserveHostHeaderGatewayFilterFactory;
+import com.gaofans.vertx.gateway.web.filter.factory.RewritePathGatewayFilterFactory;
 import com.gaofans.vertx.gateway.web.predicate.PathRoutePredicateFactory;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -38,10 +39,14 @@ public class HttpRouteLocator implements RouteLocator<HttpServerRequest, HttpSer
                 .build();
         PathRoutePredicateFactory.Config config3 = new PathRoutePredicateFactory.Config();
         config3.setPatterns(Collections.singletonList("/baidu/**"));
+        RewritePathGatewayFilterFactory.Config rewriteConfig = new RewritePathGatewayFilterFactory.Config();
+        rewriteConfig.setReplacement("/$\\{segment}");
+        rewriteConfig.setRegexp("/baidu/(?<segment>.*)");
         Route<HttpServerRequest, HttpServerResponse> baidu = Route
                 .<HttpServerRequest, HttpServerResponse>builder()
                 .predicate(new PathRoutePredicateFactory().apply(config3))
                 .uri("http://www.baidu.com:80/")
+                .filter(new RewritePathGatewayFilterFactory().apply(rewriteConfig))
                 .id("baidu")
                 .build();
         routes.add(training);
