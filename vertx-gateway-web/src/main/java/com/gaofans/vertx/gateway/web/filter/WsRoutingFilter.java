@@ -5,6 +5,7 @@ import com.gaofans.vertx.gateway.filter.GlobalFilter;
 import com.gaofans.vertx.gateway.filter.HeadersFilter;
 import com.gaofans.vertx.gateway.handler.Exchanger;
 import com.gaofans.vertx.gateway.route.Route;
+import com.gaofans.vertx.gateway.web.filter.headers.PreserveHostHeaderFilter;
 import com.gaofans.vertx.gateway.web.util.WebUtil;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
@@ -27,10 +28,10 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
 
     private final HttpClient httpClient;
 
-    private List<HeadersFilter> headersFilters;
+    private List<HeadersFilter<HttpServerRequest, HttpServerResponse>> headersFilters;
 
     public WsRoutingFilter(HttpClient httpClient,
-                           List<HeadersFilter> headersFilters) {
+                           List<HeadersFilter<HttpServerRequest, HttpServerResponse>> headersFilters) {
         this.httpClient = httpClient;
         this.headersFilters = headersFilters;
         this.headersFilters = getHeadersFilters();
@@ -51,7 +52,7 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
         Route<HttpServerRequest, HttpServerResponse> route = exchanger.getRoute();
         if(determine(request)){
             request.toWebSocket().onSuccess(webSocket -> {
-                WebSocketConnectOptions options = getWebSocketConnectOptions(request, route);
+                WebSocketConnectOptions options = getWebSocketConnectOptions(exchanger, request, route);
                 webSocket.pause();
                 httpClient
                         .webSocket(options)
@@ -77,10 +78,11 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
                 && HttpHeaderValues.WEBSOCKET.toLowerCase().toString().equals(upgrade.toLowerCase());
     }
 
-    private WebSocketConnectOptions getWebSocketConnectOptions(HttpServerRequest request, Route<HttpServerRequest, HttpServerResponse> route) {
+    private WebSocketConnectOptions getWebSocketConnectOptions(Exchanger<HttpServerRequest, HttpServerResponse> exchanger,
+                                                               HttpServerRequest request, Route<HttpServerRequest, HttpServerResponse> route) {
         int port = route.getUri().getPort();
         WebSocketConnectOptions webSocketConnectOptions = new WebSocketConnectOptions();
-        webSocketConnectOptions.setHeaders(HeadersFilter.filterRequest(this.headersFilters, request.headers()));
+        webSocketConnectOptions.setHeaders(HeadersFilter.filterRequest(exchanger,this.headersFilters, request.headers()));
         webSocketConnectOptions.setMethod(request.method());
         webSocketConnectOptions.setHost(request.host());
         webSocketConnectOptions.setAbsoluteURI(request.absoluteURI());
@@ -94,12 +96,12 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
      * 获取请求头过滤器
      * @return 请求头过滤器
      */
-    private List<HeadersFilter> getHeadersFilters(){
+    private List<HeadersFilter<HttpServerRequest, HttpServerResponse>> getHeadersFilters(){
         if (this.headersFilters == null){
             this.headersFilters = new ArrayList<>();
         }
         //添加一个过滤器，过滤掉sec-websocket开头的请求头
-        headersFilters.add(input -> {
+        headersFilters.add((exchanger,input) -> {
             MultiMap filtered = new HeadersMultiMap();
             input.forEach(entry -> {
                 if(!entry.getKey().toLowerCase().startsWith("sec-websocket")){
@@ -108,6 +110,7 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
             });
             return filtered;
         });
+        this.headersFilters.add(new PreserveHostHeaderFilter());
         return this.headersFilters;
     }
 

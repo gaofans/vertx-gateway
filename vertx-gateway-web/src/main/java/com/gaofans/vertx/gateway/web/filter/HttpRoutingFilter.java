@@ -5,7 +5,9 @@ import com.gaofans.vertx.gateway.filter.GlobalFilter;
 import com.gaofans.vertx.gateway.filter.HeadersFilter;
 import com.gaofans.vertx.gateway.handler.Exchanger;
 import com.gaofans.vertx.gateway.route.Route;
+import com.gaofans.vertx.gateway.web.filter.headers.PreserveHostHeaderFilter;
 import com.gaofans.vertx.gateway.web.util.WebUtil;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -13,6 +15,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.streams.Pipe;
 import org.springframework.core.Ordered;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -20,15 +23,18 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
 
     private final HttpClient httpClient;
 
-    private List<HeadersFilter> headersFilters;
+    private List<HeadersFilter<HttpServerRequest, HttpServerResponse>> headersFilters;
 
-    public HttpRoutingFilter(HttpClient httpClient, List<HeadersFilter> headersFilters) {
+    public HttpRoutingFilter(HttpClient httpClient,
+                             List<HeadersFilter<HttpServerRequest, HttpServerResponse>> headersFilters) {
         this.httpClient = httpClient;
-        this.headersFilters = Objects.requireNonNull(headersFilters);;
+        this.headersFilters = Objects.requireNonNull(headersFilters);
+        this.headersFilters = getHeadersFilter();
     }
 
     public HttpRoutingFilter(HttpClient httpClient) {
         this.httpClient = httpClient;
+        this.headersFilters = getHeadersFilter();
     }
 
     @Override
@@ -51,7 +57,7 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
                         targetHost,
                         targetUri)
                 .onSuccess(req -> {
-                    req.headers().setAll(HeadersFilter.filterRequest(this.headersFilters,request.headers()));
+                    req.headers().setAll(HeadersFilter.filterRequest(exchanger,this.headersFilters,request.headers()));
                     Pipe<Buffer> pipe = request.pipe();
                     pipe.endOnSuccess(true);
                     pipe.to(req)
@@ -72,6 +78,16 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
                 .onFailure(event -> WebUtil.setBadStatus(response,event));
     }
 
+    /**
+     * 添加host header过滤器
+     */
+    private List<HeadersFilter<HttpServerRequest, HttpServerResponse>> getHeadersFilter(){
+        if(this.headersFilters == null){
+            this.headersFilters = new ArrayList<>();
+        }
+        this.headersFilters.add(new PreserveHostHeaderFilter());
+        return this.headersFilters;
+    }
 
     @Override
     public int getOrder() {

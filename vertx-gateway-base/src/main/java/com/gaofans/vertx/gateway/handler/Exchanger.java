@@ -4,6 +4,7 @@ import com.gaofans.vertx.gateway.route.Route;
 import org.springframework.util.Assert;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 代理请求与响应之间的交换器
@@ -57,7 +58,19 @@ public interface Exchanger<T,R> {
      */
     @SuppressWarnings("unchecked")
     default <M> M context(String name) {
-        return (M) context().get(name);
+        return (M) Optional.ofNullable(context().get(name)).orElse(null);
+    }
+
+    /**
+     * 获取上下文中的属性
+     * @param name 属性名称
+     * @param defaultValue 默认值
+     * @param <M> 属性值
+     * @return 属性值
+     */
+    @SuppressWarnings("unchecked")
+    default <M> M context(String name,M defaultValue) {
+        return Optional.ofNullable(context().get(name)).map(o -> (M)o).orElse(defaultValue);
     }
 
     /**

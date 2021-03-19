@@ -31,7 +31,6 @@ public class HttpFilteringHandler extends AbstractFilteringHandler<HttpServerReq
             return;
         }
         List<GatewayFilter<HttpServerRequest, HttpServerResponse>> gatewayFilters = route.getFilters();
-
         List<GatewayFilter<HttpServerRequest, HttpServerResponse>> combined = new ArrayList<>(getGlobalFilters());
         combined.addAll(gatewayFilters);
         AnnotationAwareOrderComparator.sort(combined);

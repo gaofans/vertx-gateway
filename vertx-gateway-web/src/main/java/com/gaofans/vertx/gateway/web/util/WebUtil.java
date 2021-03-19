@@ -8,6 +8,8 @@ import io.vertx.core.http.HttpServerResponse;
  */
 public final class WebUtil {
 
+    public static final String PRESERVE_HOST_HEADER_ATTRIBUTE = qualify("preserveHostHeader");
+
     private WebUtil() {}
 
     public static void setBadStatus(HttpServerResponse response,Throwable throwable){
@@ -22,5 +24,9 @@ public final class WebUtil {
                 .setStatusCode(HttpResponseStatus.BAD_GATEWAY.code())
                 .setStatusMessage(HttpResponseStatus.BAD_GATEWAY.reasonPhrase())
                 .end();
+    }
+
+    private static String qualify(String attr) {
+        return WebUtil.class.getName() + "." + attr;
     }
 }
