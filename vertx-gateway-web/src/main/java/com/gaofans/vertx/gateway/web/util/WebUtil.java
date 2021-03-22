@@ -15,6 +15,7 @@ public final class WebUtil {
 
     public static final String PRESERVE_HOST_HEADER_ATTRIBUTE = qualify("preserveHostHeader");
     public static final String GATEWAY_ORIGINAL_REQUEST_URL_ATTR = qualify("gatewayOriginalRequestUrl");
+    public static final String GATEWAY_REQUEST_URL_ATTR = qualify("gatewayRequestUrl");
 
     private WebUtil() {}
 

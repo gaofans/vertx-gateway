@@ -16,6 +16,10 @@ public interface HeadersFilter<T,R> {
 		return filter(exchanger, filters, headers, Type.REQUEST);
 	}
 
+	static <T,R> MultiMap filterResponse(Exchanger<T,R> exchanger, List<HeadersFilter<T,R>> filters, MultiMap headers) {
+		return filter(exchanger, filters, headers, Type.RESPONSE);
+	}
+
 	static <T,R> MultiMap filter(Exchanger<T,R> exchanger, List<HeadersFilter<T,R>> filters, MultiMap input, Type type) {
 		if (filters != null) {
 			return filters

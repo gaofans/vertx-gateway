@@ -6,18 +6,20 @@ import com.gaofans.vertx.gateway.filter.HeadersFilter;
 import com.gaofans.vertx.gateway.handler.Exchanger;
 import com.gaofans.vertx.gateway.route.Route;
 import com.gaofans.vertx.gateway.web.filter.headers.PreserveHostHeaderFilter;
+import com.gaofans.vertx.gateway.web.filter.headers.RemoveLocationHeaderFilter;
 import com.gaofans.vertx.gateway.web.util.WebUtil;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.streams.Pipe;
 import org.springframework.core.Ordered;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServerResponse>, Ordered {
 
@@ -50,7 +52,7 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
         HttpMethod targetMethod = request.method();
         int targetPort = route.getUri().getPort();
         String targetHost = route.getUri().getHost();
-        String targetUri = request.uri();
+        String targetUri = Optional.<String>ofNullable(exchanger.context(WebUtil.GATEWAY_REQUEST_URL_ATTR)).orElse(request.uri());
         httpClient
                 .request(targetMethod,
                         targetPort,
@@ -86,6 +88,7 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
             this.headersFilters = new ArrayList<>();
         }
         this.headersFilters.add(new PreserveHostHeaderFilter());
+        this.headersFilters.add(new RemoveLocationHeaderFilter());
         return this.headersFilters;
     }
 

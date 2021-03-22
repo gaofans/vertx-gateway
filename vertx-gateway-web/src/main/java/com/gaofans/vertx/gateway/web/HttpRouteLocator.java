@@ -40,13 +40,13 @@ public class HttpRouteLocator implements RouteLocator<HttpServerRequest, HttpSer
         PathRoutePredicateFactory.Config config3 = new PathRoutePredicateFactory.Config();
         config3.setPatterns(Collections.singletonList("/baidu/**"));
         RewritePathGatewayFilterFactory.Config rewriteConfig = new RewritePathGatewayFilterFactory.Config();
-        rewriteConfig.setReplacement("/$\\{segment}");
-        rewriteConfig.setRegexp("/baidu/(?<segment>.*)");
+        rewriteConfig.setReplacement("$\\{segment}");
+        rewriteConfig.setRegexp("/baidu(?<segment>.*)");
         Route<HttpServerRequest, HttpServerResponse> baidu = Route
                 .<HttpServerRequest, HttpServerResponse>builder()
                 .predicate(new PathRoutePredicateFactory().apply(config3))
                 .uri("http://www.baidu.com:80/")
-                .filter(new RewritePathGatewayFilterFactory().apply(rewriteConfig))
+                .filter(new OrderedGatewayFilter<>(new RewritePathGatewayFilterFactory().apply(rewriteConfig),0))
                 .id("baidu")
                 .build();
         routes.add(training);
