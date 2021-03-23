@@ -6,7 +6,6 @@ import com.gaofans.vertx.gateway.filter.HeadersFilter;
 import com.gaofans.vertx.gateway.handler.Exchanger;
 import com.gaofans.vertx.gateway.route.Route;
 import com.gaofans.vertx.gateway.web.filter.headers.PreserveHostHeaderFilter;
-import com.gaofans.vertx.gateway.web.filter.headers.RemoveLocationHeaderFilter;
 import com.gaofans.vertx.gateway.web.util.WebUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
@@ -14,6 +13,8 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.streams.Pipe;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 
 import java.util.ArrayList;
@@ -26,6 +27,8 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
     private final HttpClient httpClient;
 
     private List<HeadersFilter<HttpServerRequest, HttpServerResponse>> headersFilters;
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(HttpRoutingFilter.class);
 
     public HttpRoutingFilter(HttpClient httpClient,
                              List<HeadersFilter<HttpServerRequest, HttpServerResponse>> headersFilters) {
@@ -48,6 +51,9 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
         HttpServerRequest request = exchanger.getRequest();
         HttpServerResponse response = exchanger.getResponse();
         Route<HttpServerRequest, HttpServerResponse> route = exchanger.getRoute();
+        response.exceptionHandler(event -> {
+            LOGGER.warn("url:{},route:{},出错:{}",request.uri(),route.getUri().toString(),event.getMessage());
+        });
         request.pause();
         HttpMethod targetMethod = request.method();
         int targetPort = route.getUri().getPort();
@@ -66,6 +72,9 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
                             .onSuccess(unused -> {
                                 req.send()
                                         .onSuccess(targetResponse -> {
+                                            if(response.closed()){
+                                                return;
+                                            }
                                             response.headers().setAll(targetResponse.headers());
                                             response.setStatusCode(targetResponse.statusCode());
                                             Pipe<Buffer> rp = targetResponse.pipe();
@@ -88,7 +97,6 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
             this.headersFilters = new ArrayList<>();
         }
         this.headersFilters.add(new PreserveHostHeaderFilter());
-        this.headersFilters.add(new RemoveLocationHeaderFilter());
         return this.headersFilters;
     }
 
