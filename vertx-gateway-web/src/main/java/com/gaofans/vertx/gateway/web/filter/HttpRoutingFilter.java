@@ -7,6 +7,8 @@ import com.gaofans.vertx.gateway.handler.Exchanger;
 import com.gaofans.vertx.gateway.route.Route;
 import com.gaofans.vertx.gateway.web.filter.headers.PreserveHostHeaderFilter;
 import com.gaofans.vertx.gateway.web.util.WebUtil;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
@@ -43,11 +45,12 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
     }
 
     @Override
-    public void filter(Exchanger<HttpServerRequest, HttpServerResponse> exchanger,
-                       GatewayFilterChain<HttpServerRequest, HttpServerResponse> filterChain) {
+    public Future<Void> filter(Exchanger<HttpServerRequest, HttpServerResponse> exchanger,
+                         GatewayFilterChain<HttpServerRequest, HttpServerResponse> filterChain) {
         if(exchanger.isRouted()){
-            filterChain.filter(exchanger);
+            return filterChain.filter(exchanger);
         }
+        Promise<Void> promise = Promise.promise();
         HttpServerRequest request = exchanger.getRequest();
         HttpServerResponse response = exchanger.getResponse();
         Route<HttpServerRequest, HttpServerResponse> route = exchanger.getRoute();
@@ -80,13 +83,14 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
                                             Pipe<Buffer> rp = targetResponse.pipe();
                                             rp.to(response);
                                             exchanger.setRouted(true);
-                                            filterChain.filter(exchanger);
+                                            filterChain.filter(exchanger).onComplete(promise);
                                         })
-                                        .onFailure(event -> WebUtil.setBadStatus(response,event));
+                                        .onFailure(event -> WebUtil.setBadStatus(response,event).onComplete(promise));
                             })
-                            .onFailure(event -> WebUtil.setBadStatus(response,event));
+                            .onFailure(event -> WebUtil.setBadStatus(response,event).onComplete(promise));
                 })
-                .onFailure(event -> WebUtil.setBadStatus(response,event));
+                .onFailure(event -> WebUtil.setBadStatus(response,event).onComplete(promise));
+        return promise.future();
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.gaofans.vertx.gateway.filter;
 
 import com.gaofans.vertx.gateway.handler.Exchanger;
+import io.vertx.core.Future;
 
 /**
  * 全局生效的拦截器
@@ -14,6 +15,6 @@ public interface GlobalFilter<T,R> {
      * @param exchanger
      * @param filterChain
      */
-    void filter(Exchanger<T,R> exchanger,GatewayFilterChain<T,R> filterChain);
+    Future<Void> filter(Exchanger<T,R> exchanger, GatewayFilterChain<T,R> filterChain);
 
 }

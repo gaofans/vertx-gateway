@@ -4,6 +4,7 @@ import com.gaofans.vertx.gateway.filter.GatewayFilter;
 import com.gaofans.vertx.gateway.filter.GatewayFilterChain;
 import com.gaofans.vertx.gateway.filter.GlobalFilter;
 import com.gaofans.vertx.gateway.filter.OrderedGatewayFilter;
+import io.vertx.core.Future;
 import org.springframework.core.Ordered;
 
 import java.util.List;
@@ -50,8 +51,8 @@ public abstract class AbstractFilteringHandler<T,R> implements FilteringHandler<
         }
 
         @Override
-        public void filter(Exchanger<T, R> exchanger, GatewayFilterChain<T, R> filterChain) {
-            this.delegate.filter(exchanger, filterChain);
+        public Future<Void> filter(Exchanger<T, R> exchanger, GatewayFilterChain<T, R> filterChain) {
+            return this.delegate.filter(exchanger, filterChain);
         }
     }
 
@@ -76,12 +77,13 @@ public abstract class AbstractFilteringHandler<T,R> implements FilteringHandler<
         }
 
         @Override
-        public void filter(Exchanger<T,R> exchanger) {
+        public Future<Void> filter(Exchanger<T,R> exchanger) {
             if (this.index < filters.size()) {
                 GatewayFilter<T,R> filter = filters.get(this.index);
                 DefaultGatewayFilterChain<T,R> chain = new DefaultGatewayFilterChain<>(this, this.index + 1);
-                filter.filter(exchanger, chain);
+                return filter.filter(exchanger, chain);
             }
+            return Future.succeededFuture();
         }
 
     }

@@ -46,7 +46,7 @@ public class RewritePathGatewayFilterFactory extends AbstractGatewayFilterFactor
             }catch (Exception e){
                 WebUtil.setBadStatus(exchanger.getResponse(),e);
             }
-            filterChain.filter(exchanger);
+            return filterChain.filter(exchanger);
         };
     }
 

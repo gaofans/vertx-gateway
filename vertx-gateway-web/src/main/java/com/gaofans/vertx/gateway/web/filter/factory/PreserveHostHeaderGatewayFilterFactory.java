@@ -20,7 +20,7 @@ public class PreserveHostHeaderGatewayFilterFactory extends AbstractGatewayFilte
     public GatewayFilter<HttpServerRequest, HttpServerResponse> apply(Object config) {
         return (exchanger, filterChain) -> {
             exchanger.context().put(WebUtil.PRESERVE_HOST_HEADER_ATTRIBUTE, true);
-            filterChain.filter(exchanger);
+            return filterChain.filter(exchanger);
         };
     }
 }

@@ -1,6 +1,7 @@
 package com.gaofans.vertx.gateway.filter;
 
 import com.gaofans.vertx.gateway.handler.Exchanger;
+import io.vertx.core.Future;
 import org.springframework.core.Ordered;
 
 /**
@@ -23,8 +24,8 @@ public class OrderedGatewayFilter<T,R> implements GatewayFilter<T,R>, Ordered {
 	}
 
 	@Override
-	public void filter(Exchanger<T,R> exchange, GatewayFilterChain<T,R> chain) {
-		this.delegate.filter(exchange, chain);
+	public Future<Void> filter(Exchanger<T,R> exchange, GatewayFilterChain<T,R> chain) {
+		return this.delegate.filter(exchange, chain);
 	}
 
 	@Override

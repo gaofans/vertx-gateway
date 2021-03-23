@@ -2,6 +2,7 @@ package com.gaofans.vertx.gateway.web.util;
 
 import com.gaofans.vertx.gateway.handler.Exchanger;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 
@@ -19,15 +20,15 @@ public final class WebUtil {
 
     private WebUtil() {}
 
-    public static void setBadStatus(HttpServerResponse response,Throwable throwable){
-        response
+    public static Future<Void> setBadStatus(HttpServerResponse response, Throwable throwable){
+        return response
                 .setStatusCode(HttpResponseStatus.BAD_GATEWAY.code())
                 .setStatusMessage(HttpResponseStatus.BAD_GATEWAY.reasonPhrase())
                 .end(throwable.getMessage());
     }
 
-    public static void setBadStatus(HttpServerResponse response){
-        response
+    public static Future<Void> setBadStatus(HttpServerResponse response){
+        return response
                 .setStatusCode(HttpResponseStatus.BAD_GATEWAY.code())
                 .setStatusMessage(HttpResponseStatus.BAD_GATEWAY.reasonPhrase())
                 .end();

@@ -9,7 +9,9 @@ import com.gaofans.vertx.gateway.web.filter.headers.PreserveHostHeaderFilter;
 import com.gaofans.vertx.gateway.web.util.WebUtil;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -42,11 +44,12 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
     }
 
     @Override
-    public void filter(Exchanger<HttpServerRequest, HttpServerResponse> exchanger,
-                       GatewayFilterChain<HttpServerRequest, HttpServerResponse> filterChain) {
+    public Future<Void> filter(Exchanger<HttpServerRequest, HttpServerResponse> exchanger,
+                         GatewayFilterChain<HttpServerRequest, HttpServerResponse> filterChain) {
         if(exchanger.isRouted()){
             filterChain.filter(exchanger);
         }
+        Promise<Void> promise = Promise.promise();
         HttpServerRequest request = exchanger.getRequest();
         HttpServerResponse response = exchanger.getResponse();
         Route<HttpServerRequest, HttpServerResponse> route = exchanger.getRoute();
@@ -58,13 +61,17 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
                         .webSocket(options)
                         .onSuccess(respSocket -> {
                             exchanger.setRouted(true);
-                            respSocket.pipeTo(webSocket);
-                            webSocket.pipeTo(respSocket);
-                        }).onFailure(throwable -> WebUtil.setBadStatus(response,throwable));
-            }).onFailure(throwable -> WebUtil.setBadStatus(response,throwable));
+                            respSocket
+                                    .pipeTo(webSocket)
+                                    .onSuccess(event -> {
+                                        webSocket.pipeTo(respSocket).onComplete(promise);
+                                    }).onFailure(promise::fail);
+                        }).onFailure(throwable -> WebUtil.setBadStatus(response,throwable).onComplete(promise));
+            }).onFailure(throwable -> WebUtil.setBadStatus(response,throwable).onComplete(promise));
         }else{
             filterChain.filter(exchanger);
         }
+        return promise.future();
 
     }
 
