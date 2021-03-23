@@ -46,10 +46,10 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
     @Override
     public Future<Void> filter(Exchanger<HttpServerRequest, HttpServerResponse> exchanger,
                          GatewayFilterChain<HttpServerRequest, HttpServerResponse> filterChain) {
-        if(exchanger.isRouted()){
-            filterChain.filter(exchanger);
-        }
         Promise<Void> promise = Promise.promise();
+        if(exchanger.isRouted()){
+            filterChain.filter(exchanger).onComplete(promise);
+        }
         HttpServerRequest request = exchanger.getRequest();
         HttpServerResponse response = exchanger.getResponse();
         Route<HttpServerRequest, HttpServerResponse> route = exchanger.getRoute();
@@ -69,7 +69,7 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
                         }).onFailure(throwable -> WebUtil.setBadStatus(response,throwable).onComplete(promise));
             }).onFailure(throwable -> WebUtil.setBadStatus(response,throwable).onComplete(promise));
         }else{
-            filterChain.filter(exchanger);
+            filterChain.filter(exchanger).onComplete(promise);
         }
         return promise.future();
 
