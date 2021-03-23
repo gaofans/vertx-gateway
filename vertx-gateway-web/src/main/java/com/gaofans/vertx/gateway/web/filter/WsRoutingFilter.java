@@ -32,6 +32,8 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
 
     private List<HeadersFilter<HttpServerRequest, HttpServerResponse>> headersFilters;
 
+    private final static String SEC_WEBSOCKET = "sec-websocket";
+
     public WsRoutingFilter(HttpClient httpClient,
                            List<HeadersFilter<HttpServerRequest, HttpServerResponse>> headersFilters) {
         this.httpClient = httpClient;
@@ -46,10 +48,10 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
     @Override
     public Future<Void> filter(Exchanger<HttpServerRequest, HttpServerResponse> exchanger,
                          GatewayFilterChain<HttpServerRequest, HttpServerResponse> filterChain) {
-        Promise<Void> promise = Promise.promise();
         if(exchanger.isRouted()){
-            filterChain.filter(exchanger).onComplete(promise);
+            return filterChain.filter(exchanger);
         }
+        Promise<Void> promise = Promise.promise();
         HttpServerRequest request = exchanger.getRequest();
         HttpServerResponse response = exchanger.getResponse();
         Route<HttpServerRequest, HttpServerResponse> route = exchanger.getRoute();
@@ -63,9 +65,7 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
                             exchanger.setRouted(true);
                             respSocket
                                     .pipeTo(webSocket)
-                                    .onSuccess(event -> {
-                                        webSocket.pipeTo(respSocket).onComplete(promise);
-                                    }).onFailure(promise::fail);
+                                    .onSuccess(event -> webSocket.pipeTo(respSocket).onComplete(promise)).onFailure(promise::fail);
                         }).onFailure(throwable -> WebUtil.setBadStatus(response,throwable).onComplete(promise));
             }).onFailure(throwable -> WebUtil.setBadStatus(response,throwable).onComplete(promise));
         }else{
@@ -111,7 +111,7 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
         headersFilters.add((exchanger,input) -> {
             MultiMap filtered = new HeadersMultiMap();
             input.forEach(entry -> {
-                if(!entry.getKey().toLowerCase().startsWith("sec-websocket")){
+                if(!entry.getKey().toLowerCase().startsWith(SEC_WEBSOCKET)){
                     filtered.add(entry.getKey(),entry.getValue());
                 }
             });

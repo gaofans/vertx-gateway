@@ -47,6 +47,7 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
     @Override
     public Future<Void> filter(Exchanger<HttpServerRequest, HttpServerResponse> exchanger,
                          GatewayFilterChain<HttpServerRequest, HttpServerResponse> filterChain) {
+
         if(exchanger.isRouted()){
             return filterChain.filter(exchanger);
         }

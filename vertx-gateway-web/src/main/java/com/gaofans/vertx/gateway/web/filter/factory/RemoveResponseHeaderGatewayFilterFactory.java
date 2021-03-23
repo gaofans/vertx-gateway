@@ -9,13 +9,13 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 移除指定的请求头
+ * 移除指定的响应头
  * @author gaofans
  */
-public class RemoveRequestHeaderGatewayFilterFactory
+public class RemoveResponseHeaderGatewayFilterFactory
         extends AbstractGatewayFilterFactory<AbstractGatewayFilterFactory.NameConfig, HttpServerRequest, HttpServerResponse> {
 
-    public RemoveRequestHeaderGatewayFilterFactory() {
+    public RemoveResponseHeaderGatewayFilterFactory() {
         super(NameConfig.class);
     }
 
@@ -25,10 +25,10 @@ public class RemoveRequestHeaderGatewayFilterFactory
     }
 
     @Override
-    public GatewayFilter<HttpServerRequest, HttpServerResponse> apply(AbstractGatewayFilterFactory.NameConfig config) {
-        return (exchanger, filterChain) -> {
-            exchanger.getRequest().headers().remove(config.getName());
-            return filterChain.filter(exchanger);
-        };
+    public GatewayFilter<HttpServerRequest, HttpServerResponse> apply(NameConfig config) {
+        return (exchanger, filterChain) -> filterChain
+                    .filter(exchanger)
+                    .onSuccess(event -> exchanger.getResponse().headers().remove(config.getName()));
     }
+
 }

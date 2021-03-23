@@ -1,9 +1,12 @@
 package com.gaofans.vertx.gateway.web;
 
 import com.gaofans.vertx.gateway.filter.OrderedGatewayFilter;
+import com.gaofans.vertx.gateway.filter.factory.AbstractGatewayFilterFactory;
 import com.gaofans.vertx.gateway.route.Route;
 import com.gaofans.vertx.gateway.route.RouteLocator;
 import com.gaofans.vertx.gateway.web.filter.factory.PreserveHostHeaderGatewayFilterFactory;
+import com.gaofans.vertx.gateway.web.filter.factory.RemoveRequestHeaderGatewayFilterFactory;
+import com.gaofans.vertx.gateway.web.filter.factory.RemoveResponseHeaderGatewayFilterFactory;
 import com.gaofans.vertx.gateway.web.filter.factory.RewritePathGatewayFilterFactory;
 import com.gaofans.vertx.gateway.web.predicate.PathRoutePredicateFactory;
 import io.vertx.core.http.HttpServerRequest;
@@ -42,11 +45,17 @@ public class HttpRouteLocator implements RouteLocator<HttpServerRequest, HttpSer
         RewritePathGatewayFilterFactory.Config rewriteConfig = new RewritePathGatewayFilterFactory.Config();
         rewriteConfig.setReplacement("$\\{segment}");
         rewriteConfig.setRegexp("/baidu(?<segment>.*)");
+        AbstractGatewayFilterFactory.NameConfig r = new AbstractGatewayFilterFactory.NameConfig();
+        r.setName("Referer");
+        AbstractGatewayFilterFactory.NameConfig p = new AbstractGatewayFilterFactory.NameConfig();
+        p.setName("Location");
         Route<HttpServerRequest, HttpServerResponse> baidu = Route
                 .<HttpServerRequest, HttpServerResponse>builder()
                 .predicate(new PathRoutePredicateFactory().apply(config3))
                 .uri("http://www.baidu.com:80/")
                 .filter(new OrderedGatewayFilter<>(new RewritePathGatewayFilterFactory().apply(rewriteConfig),0))
+                .filter(new OrderedGatewayFilter<>(new RemoveRequestHeaderGatewayFilterFactory().apply(r),1))
+                .filter(new OrderedGatewayFilter<>(new RemoveResponseHeaderGatewayFilterFactory().apply(p),2))
                 .id("baidu")
                 .build();
         routes.add(training);
