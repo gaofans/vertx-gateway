@@ -46,7 +46,7 @@ public class HttpRouteLocator implements RouteLocator<HttpServerRequest, HttpSer
         rewriteConfig.setReplacement("$\\{segment}");
         rewriteConfig.setRegexp("/baidu(?<segment>.*)");
         AbstractGatewayFilterFactory.NameConfig r = new AbstractGatewayFilterFactory.NameConfig();
-        r.setName("Referer");
+        r.setName("User-Agent");
         AbstractGatewayFilterFactory.NameConfig p = new AbstractGatewayFilterFactory.NameConfig();
         p.setName("Location");
         Route<HttpServerRequest, HttpServerResponse> baidu = Route

@@ -24,6 +24,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * 对http请求进行转发并取回响应
+ * @author gaofans
+ */
 public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServerResponse>, Ordered {
 
     private final HttpClient httpClient;
@@ -55,9 +59,7 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
         HttpServerRequest request = exchanger.getRequest();
         HttpServerResponse response = exchanger.getResponse();
         Route<HttpServerRequest, HttpServerResponse> route = exchanger.getRoute();
-        response.exceptionHandler(event -> {
-            LOGGER.warn("url:{},route:{},出错:{}",request.uri(),route.getUri().toString(),event.getMessage());
-        });
+        response.exceptionHandler(event -> LOGGER.warn("url:{},route:{},出错:{}",request.uri(),route.getUri().toString(),event.getMessage()));
         request.pause();
         HttpMethod targetMethod = request.method();
         int targetPort = route.getUri().getPort();
@@ -76,21 +78,19 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
                             .onSuccess(unused -> {
                                 req.send()
                                         .onSuccess(targetResponse -> {
-                                            if(response.closed()){
-                                                return;
-                                            }
                                             response.headers().setAll(targetResponse.headers());
                                             response.setStatusCode(targetResponse.statusCode());
-                                            Pipe<Buffer> rp = targetResponse.pipe();
-                                            rp.to(response);
+                                            //将代理请求与响应放入上下文
+                                            exchanger.context().put(WebUtil.CLIENT_RESPONSE_STREAM,targetResponse);
+                                            exchanger.context().put(WebUtil.CLIENT_REQUEST_STREAM,req);
                                             exchanger.setRouted(true);
                                             filterChain.filter(exchanger).onComplete(promise);
                                         })
-                                        .onFailure(event -> WebUtil.setBadStatus(response,event).onComplete(promise));
+                                        .onFailure(promise::fail);
                             })
-                            .onFailure(event -> WebUtil.setBadStatus(response,event).onComplete(promise));
+                            .onFailure(promise::fail);
                 })
-                .onFailure(event -> WebUtil.setBadStatus(response,event).onComplete(promise));
+                .onFailure(promise::fail);
         return promise.future();
     }
 
@@ -107,6 +107,6 @@ public class HttpRoutingFilter implements GlobalFilter<HttpServerRequest, HttpSe
 
     @Override
     public int getOrder() {
-        return Ordered.LOWEST_PRECEDENCE;
+        return FilterOrder.HTTP_ROUTING_FILTER;
     }
 }

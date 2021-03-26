@@ -17,21 +17,23 @@ public final class WebUtil {
     public static final String PRESERVE_HOST_HEADER_ATTRIBUTE = qualify("preserveHostHeader");
     public static final String GATEWAY_ORIGINAL_REQUEST_URL_ATTR = qualify("gatewayOriginalRequestUrl");
     public static final String GATEWAY_REQUEST_URL_ATTR = qualify("gatewayRequestUrl");
+    public static final String CLIENT_RESPONSE_STREAM = qualify("gatewayClientResponseStream");
+    public static final String CLIENT_REQUEST_STREAM = qualify("gatewayClientRequestStream");
 
     private WebUtil() {}
 
     public static Future<Void> setBadStatus(HttpServerResponse response, Throwable throwable){
-        return response
-                .setStatusCode(HttpResponseStatus.BAD_GATEWAY.code())
-                .setStatusMessage(HttpResponseStatus.BAD_GATEWAY.reasonPhrase())
-                .end(throwable.getMessage());
+        return setBadStatus(response,throwable.getMessage());
     }
 
-    public static Future<Void> setBadStatus(HttpServerResponse response){
+    public static Future<Void> setBadStatus(HttpServerResponse response,String message){
+        if(response.closed() || response.ended()){
+            return Future.succeededFuture();
+        }
         return response
                 .setStatusCode(HttpResponseStatus.BAD_GATEWAY.code())
                 .setStatusMessage(HttpResponseStatus.BAD_GATEWAY.reasonPhrase())
-                .end();
+                .end(message);
     }
 
     public static void addOriginalRequestUrl(Exchanger<HttpServerRequest,HttpServerResponse> exchanger, URI url) {

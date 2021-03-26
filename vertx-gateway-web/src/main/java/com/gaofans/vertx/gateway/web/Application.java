@@ -2,6 +2,7 @@ package com.gaofans.vertx.gateway.web;
 
 import com.gaofans.vertx.gateway.filter.GlobalFilter;
 import com.gaofans.vertx.gateway.web.filter.HttpRoutingFilter;
+import com.gaofans.vertx.gateway.web.filter.WriteResponseFilter;
 import com.gaofans.vertx.gateway.web.filter.WsRoutingFilter;
 import com.gaofans.vertx.gateway.web.handler.HttpFilteringHandler;
 import com.gaofans.vertx.gateway.web.handler.HttpHandlerAdapter;
@@ -30,6 +31,7 @@ public class Application {
         List<GlobalFilter<HttpServerRequest, HttpServerResponse>> filters = new ArrayList<>();
         filters.add(new HttpRoutingFilter(httpClient));
         filters.add(new WsRoutingFilter(httpClient));
+        filters.add(new WriteResponseFilter());
         HttpFilteringHandler handler = new HttpFilteringHandler(filters);
         HttpHandlerAdapter handlerAdapter = new HttpHandlerAdapter(handler);
 
