@@ -6,7 +6,6 @@ import com.gaofans.vertx.gateway.filter.HeadersFilter;
 import com.gaofans.vertx.gateway.handler.Exchanger;
 import com.gaofans.vertx.gateway.route.Route;
 import com.gaofans.vertx.gateway.web.filter.headers.PreserveHostHeaderFilter;
-import com.gaofans.vertx.gateway.web.util.WebUtil;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.vertx.core.CompositeFuture;
@@ -58,7 +57,6 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
         }
         Promise<Void> promise = Promise.promise();
         HttpServerRequest request = exchanger.getRequest();
-        HttpServerResponse response = exchanger.getResponse();
         Route<HttpServerRequest, HttpServerResponse> route = exchanger.getRoute();
         if(determine(request)){
             request.toWebSocket().onSuccess(webSocket -> {
@@ -68,12 +66,19 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
                         .webSocket(options)
                         .onSuccess(respSocket -> {
                             exchanger.setRouted(true);
-                            respSocket
-                                    .pipeTo(webSocket)
-                                    .onSuccess(event -> webSocket.pipeTo(respSocket).onComplete(promise))
-                                    .onFailure(promise::fail);
+                            CompositeFuture.all(respSocket.pipeTo(webSocket),webSocket.pipeTo(respSocket)).onComplete(res -> {
+                                if(res.failed()){
+                                    LOGGER.warn("websocket连接异常,route:{},cause:{}",route.getUri().toString(),res.cause().getMessage());
+                                }
+                                closeConnection(exchanger,promise,webSocket,respSocket);
+                            });
                         })
-                        .onFailure(promise::fail);
+                        .onFailure(err -> {
+                            webSocket.close().onComplete(res -> {
+                                LOGGER.warn("websocket关闭失败,route:{},cause:{}", exchanger.getRoute().getUri().toString(),res.cause().getMessage());
+                                promise.fail(err);
+                            });
+                        });
             }).onFailure(promise::fail);
         }else{
             filterChain.filter(exchanger).onComplete(promise);
@@ -109,13 +114,12 @@ public class WsRoutingFilter implements GlobalFilter<HttpServerRequest, HttpServ
     private WebSocketConnectOptions getWebSocketConnectOptions(Exchanger<HttpServerRequest, HttpServerResponse> exchanger,
                                                                HttpServerRequest request, Route<HttpServerRequest, HttpServerResponse> route) {
         int port = route.getUri().getPort();
+        String host = route.getUri().getHost();
         WebSocketConnectOptions webSocketConnectOptions = new WebSocketConnectOptions();
         webSocketConnectOptions.setHeaders(HeadersFilter.filterRequest(exchanger,this.headersFilters, request.headers()));
         webSocketConnectOptions.setMethod(request.method());
-        webSocketConnectOptions.setHost(request.host());
-        webSocketConnectOptions.setAbsoluteURI(request.absoluteURI());
+        webSocketConnectOptions.setHost(host);
         webSocketConnectOptions.setPort(port);
-        webSocketConnectOptions.setServer(request.localAddress());
         webSocketConnectOptions.setURI(request.uri());
         return webSocketConnectOptions;
     }
